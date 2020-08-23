@@ -4,6 +4,10 @@ import os
 from shutil import copyfile
 import csv
 
+# Variables for developing
+weekoffset = 1
+dayoffset = -5
+
 urlToCheck = []
 vtrList = []
 basic = os.listdir("./data/basic/")
@@ -17,22 +21,25 @@ weeknumber = datetime.datetime.today().isocalendar()[1]
 weekday = datetime.datetime.today().weekday()
 date = str(datetime.datetime.today()).split('-')
 
-url = "https://gymnasium-remigianum.net/webuntis/"+str(weeknumber)+"/w/w00001.htm"
+url = "https://gymnasium-remigianum.net/webuntis/"+str(weeknumber+weekoffset)+"/w/w00001.htm"
 src = urllib.request.urlopen(url).read()
 
 tbl = str(src).split('<a name="') #Split source code into days
 
-try:
-    affectedForms = tbl[weekday+1].split('Betroffene Klassen&nbsp;</td><td align="left">')[1].split('</td></tr>')[0].split(', ') #Get the affected Forms
+if True:
+    affectedForms = []
+    for form in forms:
+        if '<th class="list' in tbl[weekday+1+dayoffset]:
+            affectedForms.append(form)
+    print(affectedForms)
+
     for i in range(len(affectedForms)):
-        urlToCheck.append("https://gymnasium-remigianum.net/webuntis/"+str(weeknumber)+"/w/w000"+str(forms.index(affectedForms[i])+1).zfill(2)+".htm")
+        urlToCheck.append("https://gymnasium-remigianum.net/webuntis/"+str(weeknumber+weekoffset)+"/w/w000"+str(forms.index(affectedForms[i])+1).zfill(2)+".htm")
 
     for url in urlToCheck:
         src = urllib.request.urlopen(url).read()
-        currentDay = str(src).split('<a name="')[weekday+1]
-        vertretungen = currentDay.split(
-            '>Klasse(n)</th><th class="list" align="center">Raum</th><th class="list" align="center">Text</th></tr>')[
-            1].split("<tr class='list")
+        currentDay = str(src).split('<a name="')[weekday+1-dayoffset]
+        vertretungen = currentDay.split('<th class="list" align="center">Raum</th><th class="list" align="center">Text</th><th class="list" align="center">(Raum)</th></tr>')[1].split("<tr class='list")
 
         for i in range(len(vertretungen)):
             vtrList.append(vertretungen[i].split(' >'))
@@ -40,8 +47,6 @@ try:
                 for k in range(len(vtrList[j])):
                     vtrList[j][k] = vtrList[j][k].split('</td')[0]
 
-except IndexError:
-    print("Die Vertretungen für diesen Tag sind noch nicht freigegeben")
 
 url = "https://www.nrw-ferien.de/nrw-ferien-"+date[0]+".html"
 holidayStart = str(urllib.request.urlopen(url).read()).split("title='Sommerferien 2020 in Nordrhein-Westfalen' hreflang='de-de'>Sommerferien</a></h3><p class='f_datum'>")[1].split("-")[0].split(" ")[1].split(".")
